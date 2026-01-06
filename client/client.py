@@ -16,9 +16,13 @@ class AssetHandler(FileSystemEventHandler):
             if asset.hash not in self.client.recorded_hashes:
                 print(f"[Watcher] New asset detected: {asset.path}")
                 self.client.recorded_hashes.add(asset.hash)
+                self.client.upload(asset)
+
                
 
 class Client:
+
+    
   
     def __init__(self, watched_dir: str, state_file: str):
         self.watched_dir = watched_dir
@@ -35,7 +39,7 @@ class Client:
         with open(self.state_file, "w") as f:
             json.dump(list(self.recorded_hashes), f)
 
-
+    #סורק לבדיקת שינויים בקבצים
     def scan(self):
    
         assets = []
@@ -66,3 +70,27 @@ class Client:
         observer.join()
         self.save_state()
         print("[Watcher] State saved.")
+
+    #מאתחל את Minio
+    def setup_minio(self, endpoint, access_key, secret_key, bucket_name):
+        self.minio_client = Minio(
+            endpoint,
+            access_key=access_key,
+            secret_key=secret_key,
+            secure=False
+        )
+        self.bucket_name = bucket_name
+        if not self.minio_client.bucket_exists(bucket_name):
+            self.minio_client.make_bucket(bucket_name)
+    
+    #העלאת הקובץ
+    def upload(self, asset):
+        object_name = os.path.basename(asset.path)
+        self.minio_client.fput_object(
+            self.bucket_name,
+            object_name,
+            asset.path
+        )
+        print(f"[Upload] Uploaded {asset.path} to bucket {self.bucket_name}")
+
+
