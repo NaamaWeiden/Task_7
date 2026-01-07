@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import requests
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from client.asset import Asset
@@ -23,7 +24,6 @@ class AssetHandler(FileSystemEventHandler):
 class Client:
 
     
-  
     def __init__(self, watched_dir: str, state_file: str):
         self.watched_dir = watched_dir
         self.state_file = state_file
@@ -71,26 +71,19 @@ class Client:
         self.save_state()
         print("[Watcher] State saved.")
 
-    #מאתחל את Minio
-    def setup_minio(self, endpoint, access_key, secret_key, bucket_name):
-        self.minio_client = Minio(
-            endpoint,
-            access_key=access_key,
-            secret_key=secret_key,
-            secure=False
-        )
-        self.bucket_name = bucket_name
-        if not self.minio_client.bucket_exists(bucket_name):
-            self.minio_client.make_bucket(bucket_name)
+
     
-    #העלאת הקובץ
-    def upload(self, asset):
-        object_name = os.path.basename(asset.path)
-        self.minio_client.fput_object(
-            self.bucket_name,
-            object_name,
-            asset.path
-        )
-        print(f"[Upload] Uploaded {asset.path} to bucket {self.bucket_name}")
+    #העלאת הקובץ לשרת
+    
+    def upload_to_server(self, asset):
+        url = "http://127.0.0.1:8000/upload"
+        with open(asset.path, "rb") as f:
+            files = {"file": (os.path.basename(asset.path), f)}
+            response = requests.post(url, files=files)
+            if response.status_code == 200:
+                print(f"[Upload] {asset.path} uploaded to server")
+            else:
+                print(f"[Upload] Failed: {response.text}")
+
 
 
