@@ -17,7 +17,15 @@ class AssetHandler(FileSystemEventHandler):
             if asset.hash not in self.client.recorded_hashes:
                 print(f"[Watcher] New asset detected: {asset.path}")
                 self.client.recorded_hashes.add(asset.hash)
-                self.client.upload(asset)
+                self.client.upload_to_server(asset)
+    def on_modified(self, event):
+        if not event.is_directory:
+            asset = Asset(event.src_path)
+            if asset.hash not in self.client.recorded_hashes:
+                print(f"[Watcher] Modified asset detected: {asset.path}")
+                self.client.recorded_hashes.add(asset.hash)
+                self.client.upload_to_server(asset)
+
 
                
 
