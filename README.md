@@ -1,0 +1,1 @@
+## Asset Catalog ServerInitial implementation with FastAPI and MinIO
